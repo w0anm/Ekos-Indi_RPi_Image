@@ -1,0 +1,530 @@
+#!/bin/bash
+# sys_imagebkup utility
+#     modified from
+#                RasPBX backup utility, version 1.2
+#                Author: Gernot Bauer <gernot@raspbx.org>
+#
+# This file is was part of RasPBX.
+#
+# RasPBX is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# RasPBX is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+#   sys-imagebkup
+
+# Note, if raspberry Pi 4 and Ubuntu, must change disk labels to PARTUUID
+# from LABEL.  This is based upon:
+#    lsblk -o PARTUUID /dev/mmcblkpX | grep -v PARTUUID
+# change /etc/fstab to use PARTUUID instead of LABEL based upon the above 
+# command:
+#
+#  PARTUUID=d8560ca1-02      /   ext4   defaults   0    1
+#  PARTUUID=d8560ca1-01      /boot/firmware  vfat    defaults        0       1
+
+#######################################################################
+
+DEBUG=N
+##set -x
+
+# source
+source /usr/local/etc/image_backup.conf 
+
+# trap errors
+set -e
+trap 'catch $? $LINENO' EXIT
+
+#below used with debug
+RSYNCLOG=/tmp/rsync.log
+
+# Raspberry Pi Devices (from config)
+# DISKDEV=mmcblk0
+
+BOOT_TOG=$(fdisk -l /dev/${DISKDEV} | grep ${DISKDEV}${DEVPART}1 | awk '{print $2}')
+
+#if boot toggle is present, then shift awk over
+if [ "$BOOT_TOG" = "*" ] ; then
+   P1_START=$(fdisk -l /dev/${DISKDEV} | grep ${DISKDEV}${DEVPART}1 | awk '{print $3}')
+   P1_END=$(fdisk -l /dev/${DISKDEV} | grep ${DISKDEV}${DEVPART}1 | awk '{print $4}')
+else
+   P1_START=$(fdisk -l /dev/${DISKDEV} | grep ${DISKDEV}${DEVPART}1 | awk '{print $2}')
+   P1_END=$(fdisk -l /dev/${DISKDEV} | grep ${DISKDEV}${DEVPART}1 | awk '{print $3}')
+fi
+
+P2_START=$(fdisk -l /dev/${DISKDEV} | grep ${DISKDEV}${DEVPART}2 | awk '{print $2}')
+P2_END=$(fdisk -l /dev/${DISKDEV} | grep ${DISKDEV}${DEVPART}2 | awk '{print $3}')
+
+P1_OFFSET=$(expr "$P1_START"  \* 512)
+P1_SIZELIMIT=$(expr "$P1_END" \* 512)
+P2_OFFSET=$(expr "$P2_START" \* 512)
+
+if [ ! -z "$DEBUG" ] ; then
+  echo "p1_start=$P1_START"
+  echo "p1_end=$P1_END"
+  echo "p1_offset=$P1_OFFSET"
+  echo "p1_sizelimit=$P1_SIZELIMIT"
+  echo "p2_start=$P2_START"
+  echo "p2_offset=$P2_OFFSET"
+fi
+
+# subroutines
+
+clean-up()
+{
+    set +e
+    # umount loop device
+    umount ${MOUNTPATH}${BOOTMOUNT}
+    umount ${MOUNTPATH}
+    # delete loop device
+    if [ -n "$DEVICE" ] ; then
+       losetup -d $DEVICE
+    fi
+}
+
+catch ()
+{
+    if [ "$1" != "0" ] ; then
+    ##if [ "0" != "0" ] ; then
+        echo "Backup System Error..."
+        #error handling goes here
+	echo "Error $1 occurred."
+        echo "Unmounting loop devices (${DEVICE}) and $EXTMOUNT"
+        clean-up
+    fi
+}
+
+
+usage()
+{
+    echo "  Usage: $0 -n <ext_mount> [-m <local_mount_pt>] [-b <boot_mount>  ]"
+    echo "       [-s <blocksize>] -f <image_name>"
+    echo
+    exit 1
+}
+
+
+spinner()
+{
+    local spid=$!
+    #local delay=0.75
+    local delay=1
+    local spinstr='|/-\'
+    # while [ "$(ps a | awk '{print $1}' | grep $spid)" ]; do
+    while [ -d /proc/$spid ]; do
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+    printf "    \b\b\b\b"
+}
+
+setup_lo() {
+  # losetup -o offset = (partion 1 start) * 512
+  # losetup --size limit = (p1_end) * 512
+  DEVICE1=$(/sbin/losetup -f)
+  if [ -z "$DEVICE1" ]
+  then
+    echo "Error setting up loop device."
+    exit 1
+  fi
+  /sbin/losetup -f -o $P1_OFFSET --sizelimit $P1_SIZELIMIT "$IMAGE_FILE"
+  if [ $? -ne 0 ]
+  then
+    echo "Error setting up loop device."
+    exit 1
+  fi
+
+  DEVICE2=$(/sbin/losetup -f)
+  if [ -z "$DEVICE2" ]
+  then
+    echo "Error setting up loop device."
+    /sbin/losetup -d "$DEVICE1"
+    exit 1
+  fi
+  /sbin/losetup -f -o $P2_OFFSET  "$IMAGE_FILE"
+
+  if [ $? -ne 0 ]
+  then
+    echo "Error setting up loop device."
+    /sbin/losetup -d "$DEVICE1"
+    exit 1
+  fi
+}
+
+delete_lo() {
+  /sbin/losetup -d "$DEVICE1"
+  if [ $? -ne 0 ]
+  then
+    echo "Error removing loop device."
+    /sbin/losetup -d "$DEVICE2"
+    exit 1
+  fi
+
+  /sbin/losetup -d "$DEVICE2"
+  if [ $? -ne 0 ]
+  then
+    echo "Error removing loop device."
+    exit 1
+  fi
+}
+
+mount_image() {
+  if [ ! -d $MOUNTPATH ]
+  then
+    mkdir -p  $MOUNTPATH
+  fi
+  mount "$DEVICE2" $MOUNTPATH
+  if [ $? -ne 0 ]
+  then
+    echo "Error mounting root partition. Wrong image file?"
+    delete_lo
+    exit 1
+  fi
+
+  if [ ! -d ${MOUNTPATH}${BOOTMOUNT} ]
+  then
+    mkdir -p ${MOUNTPATH}${BOOTMOUNT}
+  fi
+  mount "$DEVICE1" ${MOUNTPATH}${BOOTMOUNT}/
+  if [ $? -ne 0 ]
+  then
+    echo "Error mounting boot partition. Wrong image file?"
+    umount ${MOUNTPATH}
+    delete_lo
+    exit 1
+  fi
+}
+
+unmount_image() {
+  umount ${MOUNTPATH}${BOOTMOUNT}
+  if [ $? -ne 0 ]
+  then
+    echo "Error unmounting boot partition."
+    umount -l ${MOUNTPATH}${BOOTMOUNT}
+    umount -l ${MOUNTPATH}
+    delete_lo
+    exit 1
+  fi
+
+  umount ${MOUNTPATH}
+  if [ $? -ne 0 ]
+  then
+    echo "Error unmounting root partition."
+    umount -l ${MOUNTPATH}
+    delete_lo
+    exit 1
+  fi
+}
+
+create_image() {
+  if [ -f "$IMAGE_FILE" ]
+  then
+    echo "Image file $IMAGE_FILE already exists!"
+    echo "Please remove it manually or specify a different file."
+    echo "Call \"sys_imagebkup $IMAGE_FILE\" to make a backup to this file."
+    exit 1
+  fi
+  if [ $? -ne 0 ]
+  then
+    echo "Error installing required tools."
+    exit 1
+  fi
+
+  if [ ! -z "$QUIET" ] ; then
+      echo "Creating image file. This could take a up to 10 minutes to complete..."
+      echo "===================================="
+  fi
+  SEEKMB=$(expr $IMAGE_SIZE - 1)
+  # command setup
+  pwd
+  (dd count=1 seek="$SEEKMB" if=/dev/zero of="$IMAGE_FILE" bs=1M) &
+  # had to get pid this way
+  # pid=$(ps | grep dd | awk '{print $1}')
+  pid=$!
+
+  echo -n "    Working [$pid]...";
+
+  if [ "$DEBUG" = "" ] && [ "$QUIET" = "" ] ; then
+  # if [ -z "$DEBUG" ]; then
+    # if DEBUG is empty (or QUIET) -  use spinner
+    while [ -d /proc/$pid ] ; do
+         spinner
+      if wait $pid; then
+         echo "Image creation complete."
+      else
+        echo "Error creating image file."
+        exit 1
+      fi
+    done
+  fi
+
+  LASTSECTOR=$(expr "$IMAGE_SIZE" \* 2048 - 1)
+  sync
+  sleep 5
+  parted "$IMAGE_FILE" << EOF
+mktable msdos
+unit s
+mkpart primary fat32 $P1_START $P1_END
+mkpart primary $P2_START $LASTSECTOR
+quit
+EOF
+  if [ $? -ne 0 ]
+  then
+    echo "Error creating partitions."
+    exit 1
+  fi
+
+  setup_lo
+
+  # added -I option
+  mkfs.vfat  -I "$DEVICE1"
+  if [ $? -ne 0 ]
+  then
+    echo "Error creating FAT partition."
+    delete_lo
+    exit 1
+  fi
+
+  mkfs.ext4 "$DEVICE2"
+  if [ $? -ne 0 ]
+  then
+    echo "Error creating ext4 partition."
+    delete_lo
+    exit 1
+  fi
+
+  mount_image
+
+  mkdir ${MOUNTPATH}/dev ${MOUNTPATH}/media ${MOUNTPATH}/mnt ${MOUNTPATH}/proc ${MOUNTPATH}/run ${MOUNTPATH}/sys ${MOUNTPATH}/tmp
+  if [ $? -ne 0 ]
+  then
+    echo "Error creating directories."
+    unmount_image
+    delete_lo
+    exit 1
+  fi
+  chmod a+rwxt ${MOUNTPATH}/tmp
+  unmount_image
+  delete_lo
+}
+
+
+do_backup () {
+
+  setup_lo
+  mount_image
+
+  sync
+
+  # command setup
+  # if not debugging...
+  if [ "$DEBUG" = "" ]  && [ "$QUIET" = "" ] ; then
+    # if set,but in backgroup for spinner
+    (rsync -aDH --partial --numeric-ids --delete --force --exclude '/dev' --exclude '/media' --exclude '/mnt' --exclude '/proc' --exclude '/run' --exclude '/sys' --exclude '/tmp' --exclude 'lost\+found' --exclude '/etc/udev/rules.d/70-persistent-net.rules' --exclude ${MOUNTPATH} --exclude ${EXTMOUNT} ${EXCLUDE}  / ${MOUNTPATH}/ ) &
+     pid=$!
+  else
+    # debug with verbose, realtime
+    echo "rsync -avDH --partial --numeric-ids --delete --force --exclude '/dev' --exclude '/media' --exclude '/mnt' --exclude '/proc' --exclude '/run' --exclude '/sys' --exclude '/tmp' --exclude 'lost\+found' --exclude '/etc/udev/rules.d/70-persistent-net.rules' --exclude ${MOUNTPATH} --exclude ${EXTMOUNT} ${EXCLUDE}  / ${MOUNTPATH}/ "  > /tmp/rsync_cmd
+
+    rsync -avDH --partial --numeric-ids --delete --force --exclude '/dev' --exclude '/media' --exclude '/mnt' --exclude '/proc' --exclude '/run' --exclude '/sys' --exclude '/tmp' --exclude 'lost\+found' --exclude '/etc/udev/rules.d/70-persistent-net.rules' --exclude ${MOUNTPATH}  --exclude ${EXTMOUNT} ${EXCLUDE} / ${MOUNTPATH}/ >> $RSYNCLOG
+
+  fi
+
+
+  if [ "$DEBUG" = "" ] && [ "$QUIET" = "" ] ; then
+  #if [ -z "$DEBUG" ]; then
+    # if DEBUG is empty (or QUIET) -  use spinner
+    echo -n "     Working [$pid]....";
+    while [ -d /proc/$pid ] ; do
+      spinner
+      if wait $pid; then
+        echo "Update completed, umounting image, please wait.."
+      else
+        echo "Error running backups."
+        delete_lo
+        exit 1
+      fi
+    done
+  fi  # spinner
+
+    unmount_image
+    delete_lo
+}
+
+fix_partuuid () {
+  #remount
+  DEVICE=$(/sbin/losetup -f)
+  if [ -z "$DEVICE" ]
+  then
+    echo "Error setting up loop device for remount."
+    exit 1
+  fi
+
+  # mount image again
+  losetup -f "$IMAGE_FILE"
+  partprobe "$DEVICE"
+  LDEVPART=p
+  mount ${DEVICE}${LDEVPART}2  ${MOUNTPATH} 
+  mount ${DEVICE}${LDEVPART}1  ${MOUNTPATH}${BOOTMOUNT}
+
+  # get new PARTUUID
+  P1_NEW_PUUID=$(lsblk -o PARTUUID ${DEVICE}${LDEVPART}1 | grep -v PARTUUID)
+  P2_NEW_PUUID=$(lsblk -o PARTUUID ${DEVICE}${LDEVPART}2 | grep -v PARTUUID)
+
+  # backup files to be changed
+  ## moved to conf file
+  ## cjk BOOTCMDFILE=cmdline.txt
+  ## BOOTCMDFILE=btcmd.txt
+  if [ ! -f ${MOUNTPATH}${BOOTMOUNT}/${BOOTCMDFILE} ] ; then
+    echo "ERROR, missing file: ${BOOTCMDFILE}"
+    exit 1
+  fi
+  if [ ! -f ${MOUNTPATH}${BOOTMOUNT}/${BOOTCMDFILE} ] ; then
+B
+    cp ${MOUNTPATH}${BOOTMOUNT}/${BOOTCMDFILE} ${MOUNTPATH}${BOOTMOUNT}/${BOOTCMDFILE}_save
+  fi
+
+  if [ ! -f ${MOUNTPATH}etc/fstab_save ] ; then
+    cp ${MOUNTPATH}/etc/fstab ${MOUNTPATH}/etc/fstab_save
+  fi
+
+  # change file (add error checking later)
+  sed -i 's,'"$P2_CUR_PUUID"','"$P2_NEW_PUUID"',' ${MOUNTPATH}${BOOTMOUNT}/${BOOTCMDFILE}
+  sed -i 's,'"$P1_CUR_PUUID"','"$P1_NEW_PUUID"',' ${MOUNTPATH}/etc/fstab
+  sed -i 's,'"$P2_CUR_PUUID"','"$P2_NEW_PUUID"',' ${MOUNTPATH}/etc/fstab
+  sync
+  sync
+
+  echo
+  echo "Differences between existing /etc/fstab and new /etc/fstab:"
+  diff /etc/fstab ${MOUNTPATH}/etc/fstab || true
+
+  echo
+  echo "Differences between existing ${BOOTMOUNT}/${BOOTCMDFILE} and ${MOUNTPATH}${BOOTMOUNT}/${BOOTCMDFILE}:"
+  diff ${BOOTMOUNT}/${BOOTCMDFILE} ${MOUNTPATH}${BOOTMOUNT}/${BOOTCMDFILE} || true
+
+}
+
+
+#####################################################################
+#####################################################################
+# Start of script
+
+# parse command line into arguments
+while getopts "n:m:b:s:f:dq" arg
+  do
+    case ${arg} in
+    n)    # ext mout point
+          EXTMOUNT=${OPTARG}
+          ;;
+    m)    # set up the -m arg
+          MOUNTPATH=${OPTARG}
+          ;;
+    b)    # setup the -b arg
+          BOOTMOUNT=${OPTARG}
+          ;;
+    s)    # image block size -s
+          IMAGE_SIZE=${OPTARG}
+          ;;
+    f)    # image file
+          IMAGE_FILE=${OPTARG}
+          ;;
+    d)    # debug 
+          DEBUG="Y"
+          ;;
+    q)    # quiet Mode
+          QUIET="Y"
+          ;;
+    *)    usage
+          ;;
+  esac
+done
+
+# Argument checks
+if [ -z "$IMAGE_FILE" ]; then
+    echo "Missing Image File Name"
+    usage
+fi
+
+if [ -z "$EXTMOUNT" ]; then
+    echo "Missing the EXT mount point"
+    usage
+fi
+
+if [ -z "$BOOTMOUNT" ] ; then
+    BOOTMOUNT=/boot
+fi
+
+if [ -z "$MOUNTPATH" ] ; then
+    MOUNTPATH=/mnt/bkup
+fi
+
+if [ ! -z "$DEBUG" ] ; then
+  echo "mountpath=$MOUNTPATH"
+  echo "bootmount=$BOOTMOUNT"
+  echo "image_size=$IMAGE_SIZE"
+  echo "image_file=$IMAGE_FILE"
+  echo "debug=$DEBUG"
+  echo "quiet=$QUIET"
+fi
+    
+# change dirs to mount point
+cd ${EXTMOUNT}
+
+# below returns the device name ie /dev/${DISKDEV} (mmcblk0)
+ROOT_PART=$(blkid  | grep root | awk 'BEGIN {FS=":"} {print $1}')
+P1_CUR_PUUID=$(lsblk -o PARTUUID /dev/${DISKDEV}${DEVPART}1 | grep -v PARTUUID)
+P2_CUR_PUUID=$(lsblk -o PARTUUID /dev/${DISKDEV}${DEVPART}2 | grep -v PARTUUID)
+
+# if image file exists, then just rsync, the data to the existing image.
+if [ -f "$IMAGE_FILE" ] ; then
+  echo "Image file: $IMAGE_FILE"
+  echo
+  echo "    Updating (re-sync) data on image. Please wait..."
+  echo "       This could take up several minutes to complete..."
+  echo
+  # rsync the data
+  do_backup
+  # update the sync'ed data with the new partuuid information
+  fix_partuuid
+  clean-up
+  echo
+  echo
+  exit 0
+
+else
+    # Create a new image..
+    echo "Creating NEW Image File: $IMAGE_FILE"
+fi
+
+# check image size to available space
+# cjk
+# if size is too large, abort.
+
+echo
+create_image
+echo "------------------------------------"
+echo
+echo "Running backup now..."
+echo "    This could take up to 50 minutes to completed. Please wait.."
+echo "===================================="
+echo
+# backup	
+do_backup
+
+# fix partuuid
+fix_partuuid
+
+#unmount/cleanup
+clean-up
+
+echo "    Finished."
+echo "------------------------------------"
+exit 0

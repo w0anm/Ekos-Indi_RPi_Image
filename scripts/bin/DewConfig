@@ -1,0 +1,373 @@
+#!/usr/bin/python3
+
+from tkinter import *
+from tkinter import font as tkFont
+import csv
+import time
+import serial
+import sys
+
+root = Tk()
+root.title("Dew Controller Configuration")
+root.geometry("600x650")
+
+# argument check
+if len(sys.argv) == 1:
+    print("Error, did not include port argument")
+    sys.exit()
+
+# Variables
+DEBUG="n"
+SER_PORT=str(sys.argv[1])
+## SER_SPEED=str(sys.argv[2])
+
+# removes a specific prefix of a string. needed due to the "<cmd>" sometimes 
+# returning.
+def remove_prefix(str, prefix):
+    if str.startswith(prefix):
+        return str[len(prefix):]
+    else:
+        return str
+
+def getValues():
+    arduinoData = ser.readline().decode('ascii')
+    return arduinoData
+
+def getTrackingMode():
+    global TrackMode
+    #send command -T#
+    sendstring ("T")
+    #get returned value
+    ReturnVal=(getValues())
+    val1=ReturnVal[1:]
+    TrackMode=val1.rstrip('$\n\r')
+
+# create a send command that sends a string, ie "a3#"
+def sendstring(stringcmd):
+    ser.write(str.encode(stringcmd + '#'))
+    ##print(stringcmd + '#')
+
+def getTempOffsets():
+    global OffSetC1
+    global OffSetC2
+    global OffSetC3
+    #send command ?#
+    sendstring ("?")
+    #get returned value
+    ReturnVal=(getValues())
+    ##print ("retrun val:" + ReturnVal)
+    #process command string
+    val1,val2,val3 = ReturnVal.split("#")
+    # strip off initial command from response
+	# below  strips off "?" when sometimes is there
+    ##    octemp=val1[1:]
+    ##    OffSetC1=remove_prefix(octemp,'?')
+	## combined below:
+    OffSetC1=remove_prefix(val1[1:], '?')
+    OffSetC2=val2
+    OffSetC3=val3.rstrip('$\n\r')
+
+def getFirmware():
+    global firmWare
+    #send command v#
+    sendstring ("v")
+    #get returned value
+    ReturnVal=(getValues())
+    #process command string
+    # strip off command response, value, and end character
+    val1=ReturnVal[1:]
+    firmWare=val1.rstrip('$\n\r')
+    ##print ("Firmware:" + firmWare)
+
+def setTempOffsets():
+    OffSetC1=eC1data.get()
+    OffSetC2=eC2data.get()
+    OffSetC3=eC3data.get()
+    sendstring("[" + OffSetC1) 
+    sendstring("]" + OffSetC2) 
+    sendstring("%" + OffSetC3) 
+    getTempOffsets()
+    update()
+
+def clearTempOffsets():
+    OffSetC1="0.0"
+    OffSetC2="0.0"
+    OffSetC3="0.0"
+    sendstring("[" + OffSetC1) 
+    sendstring("]" + OffSetC2) 
+    sendstring("%" + OffSetC3) 
+    sendstring("%" + OffSetC3) 
+    getTempOffsets()
+    update()
+
+def setTrackMode():
+    TrackMode=str(Amb.get())
+    sendstring("a" + TrackMode) 
+
+def setch3Mode():
+    ch3Mode=str(ch3ModeConf.get())
+    sendstring("S" + ch3Mode) 
+
+def getTrackModeOffset():
+    global TrackModeOff
+    #send command -T#
+    sendstring ("y")
+    #get returned value
+    ReturnVal=(getValues())
+    val1=ReturnVal[1:]
+    TrackModeOff=val1.rstrip('$\n\r')
+
+def getlcdDisplayTime():
+    global lcdDisplayTime
+    sendstring ("H")
+    #get returned value
+    ReturnVal=(getValues())
+    val1=ReturnVal[1:]
+    lcdDisplayTime=val1.rstrip('$\n\r')
+    ##print("lcd Display Time" + lcdDisplayTime)
+
+def getch3Mode():
+    global ch3Mode
+    sendstring ("E")
+    #get returned value
+    ReturnVal=(getValues())
+    val1=ReturnVal[1:]
+    ch3Mode=val1.rstrip('$\n\r')
+    ##print("Ch3 Mode: " + ch3Mode)
+
+def zeroOffSet():
+    sendstring("z")
+    getTrackModeOffset()
+    update()
+
+def incrOffSet():
+    sendstring(">")
+    getTrackModeOffset()
+    update()
+
+def decrOffSet():
+    sendstring("<")
+    getTrackModeOffset()
+    update()
+
+def lcd_setControl():
+    # set enable/disable
+    if lcd_en.get() == "enabled":
+        # Turn on Display
+        sendstring("}")
+    if lcd_en.get() == "disabled":
+        # Turn off Display
+        sendstring("{")
+    # set Display Time
+    lcdDisplayTime=str(lcdPageTime.get())
+    sendstring("b" + lcdDisplayTime)
+
+
+def write_eeprom():
+    sendstring("w")
+
+def reset_eeprom():
+    sendstring("r")
+
+def update():
+    # for refresh you need to update all data labels.
+    status_labelOffSetCh1data.config(text=OffSetC1)
+    status_labelOffSetCh2data.config(text=OffSetC2)
+    status_labelOffSetCh3data.config(text=OffSetC3)
+    tmoffset_data.config(text=TrackModeOff)
+
+def quit():
+    root.destroy()
+
+# configure the serial connections (the parameters differs on the device you are connecting to)
+ser = serial.Serial(SER_PORT, baudrate = 57600, timeout=1)
+
+
+################################
+# main
+
+print ("starting up")
+time.sleep(5)
+getFirmware()
+getTempOffsets()
+getTrackingMode()
+getTrackModeOffset()
+getlcdDisplayTime()
+getch3Mode()
+
+
+#fonts
+helv8 = tkFont.Font(family='Helvetica', size=8)
+
+# padding
+status_labelPad = Label(root, text="     ", fg="grey").grid(row=0, column=2)
+
+# Port
+status_labelPort = Label(root, text="USB Port:",fg="blue", anchor="w")
+status_labelPort.grid(row=1, column=0)
+status_labelTPCH1data = Label(root, text=SER_PORT, width=10, anchor="w")
+status_labelTPCH1data.grid(row=1, column=1)
+
+status_labelFirm = Label(root,text="Firmware:",fg="blue", anchor="w")
+status_labelFirm.grid(row=3, column=0)
+status_labelFirmdata = Label(root, text=firmWare, width=10, anchor="w")
+status_labelFirmdata.grid(row=3, column=1)
+
+
+# padding
+status_labelPad = Label(root, text="     ", fg="grey").grid(row=4, column=2)
+
+
+# Offset Header
+status_labelOffSet = Label(root, text="Temp OffSets", fg="blue")
+status_labelOffSet.grid(row=5, column=0)
+
+
+# channel info for Dew Strip Power
+status_labelOffSetCh1 = Label(root, text="Ch 1 Offset:")
+status_labelOffSetCh1.grid(row=8, column=0)
+status_labelOffSetCh1data = Label(root, text=OffSetC1, relief="ridge", width=4)
+status_labelOffSetCh1data.grid(row=8, column=1)
+
+status_labelOffSetCh2 = Label(root, text="Ch 2 Offset:")
+status_labelOffSetCh2.grid(row=9, column=0)
+status_labelOffSetCh2data = Label(root, text=OffSetC2, relief="ridge", width=4)
+status_labelOffSetCh2data.grid(row=9, column=1)
+
+status_labelOffSetCh3 = Label(root, text="Ch 3 Offset:")
+status_labelOffSetCh3.grid(row=10, column=0)
+status_labelOffSetCh3data = Label(root, text=OffSetC3, relief="ridge", width=4)
+status_labelOffSetCh3data.grid(row=10, column=1)
+
+tmoffset_data = Label(root, text=TrackModeOff, relief="ridge", width=4)
+tmoffset_data.grid(row=10, column=6)
+
+
+#lcd control label
+lcd_control = Label(root, text="LCD Control", fg="blue", anchor="w")
+lcd_control.grid(row=12, column=0)
+
+# label for lcd Time
+lcd_pagetime = Label(root, text="LCD Page Time", fg="black", anchor="w")
+lcd_pagetime.grid(row=13, column=2)
+
+# label for channel 3 mode
+ch3_mode_label = Label(root, text="Ch 3 Mode Config", fg="blue", anchor="w")
+ch3_mode_label.grid(row=20 , column=0)
+
+# entry
+v1 = StringVar(root, value=OffSetC1)
+eC1data = Entry(root, textvariable=v1, relief="ridge", width=4)
+eC1data.grid(row=8, column=2)
+
+v2 = StringVar(root, value=OffSetC2)
+eC2data = Entry(root, textvariable=v2, relief="ridge", width=4)
+eC2data.grid(row=9, column=2)
+
+v3 = StringVar(root, value=OffSetC3)
+eC3data = Entry(root, textvariable=v3, relief="ridge", width=4)
+eC3data.grid(row=10, column=2)
+
+# padding
+status_labelPad = Label(root, text="     ", fg="grey").grid(row=8, column=3)
+
+# Tracking Mode
+status_labelTracking = Label(root, text="Tracking Mode", fg="blue")
+status_labelTracking.grid(row=5, column=4)
+
+##cjk
+# tracking mode settings
+Amb = StringVar(root, value=TrackMode)
+TM_Rbutton = Radiobutton(root, text="Ambient", variable=Amb, value=1).grid(row=8, column=4, sticky=W)
+TM_Rbutton = Radiobutton(root, text="MidPoint", variable=Amb, value=3).grid(row=9, column=4, sticky=W)
+TM_Radio = Radiobutton(root, text=" DewPoint", variable=Amb, value=2).grid(row=10, column=4, sticky=W)
+
+TM_button = Button(root, text="Set", font=helv8, command=setTrackMode)
+TM_button.grid(row=5, column=5)
+
+# LCD Page Time
+lcdPageTime = StringVar(root, value=lcdDisplayTime)
+PT20s_Rbutton = Radiobutton(root, text="2.0s", variable=lcdPageTime, value=2000)
+PT20s_Rbutton.grid(row=14, column=2)
+PT25s_Rbutton = Radiobutton(root, text="2.5s", variable=lcdPageTime, value=2500)
+PT25s_Rbutton.grid(row=15, column=2)
+PT30s_Rbutton = Radiobutton(root, text="3.0s", variable=lcdPageTime, value=3000)
+PT30s_Rbutton.grid(row=16, column=2)
+PT35s_Rbutton = Radiobutton(root, text="3.5s", variable=lcdPageTime, value=3500)
+PT35s_Rbutton.grid(row=16, column=2)
+PT40s_Rbutton = Radiobutton(root, text="4.0s", variable=lcdPageTime, value=4000)
+PT40s_Rbutton.grid(row=17, column=2)
+PT45s_Rbutton = Radiobutton(root, text="4.5s", variable=lcdPageTime, value=4500)
+PT45s_Rbutton.grid(row=18, column=2)
+
+# Ch3 Mode Configuraiton
+ch3ModeConf = StringVar(root, value=ch3Mode)
+ch3Mode0_Rbutton = Radiobutton(root, text="Off", variable=ch3ModeConf, value="0")
+ch3Mode0_Rbutton.grid(row=21, column=0, sticky=W)
+ch3Mode1_Rbutton = Radiobutton(root, text="Ch1", variable=ch3ModeConf, value="1")
+ch3Mode1_Rbutton.grid(row=22, column=0, sticky=W)
+ch3Mode2_Rbutton = Radiobutton(root, text="Ch2", variable=ch3ModeConf, value="2")
+ch3Mode2_Rbutton.grid(row=23, column=0, sticky=W)
+ch3Mode3_Rbutton = Radiobutton(root, text="Manual", variable=ch3ModeConf, value="3")
+ch3Mode3_Rbutton.grid(row=24, column=0, sticky=W)
+ch3Mode4_Rbutton = Radiobutton(root, text="Temp-probe 3", variable=ch3ModeConf, value="4")
+ch3Mode4_Rbutton.grid(row=25, column=0, sticky=W)
+
+# decrease Offset
+decOffSet_button = Button(root, text="<", command=decrOffSet)
+decOffSet_button.grid(row=9, column=5)
+
+# Zero Offset
+zeroOffSet_button = Button(root, text="0", command=zeroOffSet)
+zeroOffSet_button.grid(row=9, column=6)
+
+# increase Offset
+incOffSet_button = Button(root, text=">", command=incrOffSet)
+incOffSet_button.grid(row=9, column=7)
+
+# Get Offset buttons
+##offSetGet_button = Button(root, text="Get", font=helv8, command=getTempOffsets)
+##offSetGet_button.grid(row=7, column=1)
+offSetClear_button = Button(root, text="Reset", font=helv8, command=clearTempOffsets)
+offSetClear_button.grid(row=5, column=1)
+
+offSetSet_button = Button(root, text="Set", font=helv8, command=setTempOffsets)
+offSetSet_button.grid(row=5, column=2)
+
+# padding
+status_labelPad = Label(root, text="     ", fg="grey").grid(row=11, column=2, pady=5)
+# padding
+status_labelPad = Label(root, text="     ", fg="grey").grid(row=12, column=2, pady=5)
+
+# check box for lcd control
+lcd_en = StringVar()
+lcd_enabled = Checkbutton(root, text="LCD Enabled", variable=lcd_en, onvalue="enabled", offvalue="disabled")
+# to deslect use:
+lcd_enabled.select()
+lcd_enabled.grid(row=13, column=0)
+
+# Button to set lcd 
+lcd_set = Button(root, text="Set", font=helv8, command=lcd_setControl)
+lcd_set.grid(row=12, column=1)
+
+# Button to set ch3 mode
+ch3_set = Button(root, text="Set", font=helv8, command=setch3Mode)
+ch3_set.grid(row=20, column=1)
+
+# padding
+status_labelPad = Label(root, text="     ", fg="grey").grid(row=26, column=2, pady=5)
+
+# eeprom write button
+eepromwrite_button = Button(root, text="Write EEPROM", font=helv8, command=write_eeprom)
+eepromwrite_button.grid(row=27, column=1)
+
+# eerpom reset button
+eepromwrite_button = Button(root, text="Reset EEPROM", font=helv8, command=reset_eeprom)
+eepromwrite_button.grid(row=27, column=2)
+
+quit_button = Button(root, text="Quit", command=quit)
+quit_button.grid(row=27, column=0)
+
+
+root.mainloop() 
+

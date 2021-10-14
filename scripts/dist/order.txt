@@ -1,0 +1,37 @@
+Current order of execution
+
+First boot.
+
+copy the script.tar file into /boot/firmware (dos partition)
+copy a "run_first.sh" script into /boot/firmware
+execute "run_first.sh" script using sudo:
+
+run_first.sh
+    sudo cp /boot/firmware/script.tar /root/script.tar
+    sudo -c "cd /root/scripts ; _start_install.sh
+
+This will call "start_install.sh"
+
+_start_install.sh executes:
+
+  _package_installer.sh
+  _file_installer.sh
+  _services.sh
+
+
+
+Setup for ekos login, to start next script; will move _phd2_install.sh script to ~/bin
+when install is completed.
+
+
+ekos user installs:
+
+_phd2_install.sh
+
+
+
+_speical_install.sh is for own personal setup and should not be run at
+dist.
+
+
+

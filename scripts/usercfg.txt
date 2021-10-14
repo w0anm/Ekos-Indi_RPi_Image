@@ -1,0 +1,18 @@
+# Place "config.txt" changes (dtparam, dtoverlay, disable_overscan, etc.) in
+# this file. Please refer to the README file for a description of the various
+# configuration files on the boot partition.
+
+# hdmi_mode=35 (1280x1024, 60Hz, 5:4)
+# hdmi_mode=82 (1920x1080, 60Hz, 16:9)
+# hdmi_mode=85 (1280x720, 60Hz, 16:9)
+hdmi_force_hotplug=1
+
+[HDMI:0]
+hdmi_group=2
+hdmi_mode=82
+hdmi_drive=2
+
+[HDMI:1] 
+hdmi_group=2
+hdmi_mode=82
+hdmi_drive=2

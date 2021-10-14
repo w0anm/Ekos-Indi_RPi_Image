@@ -1,0 +1,13 @@
+[Unit]
+Description = Start X11VNC
+After = multi-user.target
+ 
+[Service]
+Type = simple
+User = root
+##ExecStart = /usr/bin/x11vnc -xkb -reopen -forever -noxrecord -noxfixes -noxdamage -display :0 -auth /var/run/lightdm/root/:0 -usepw -ncache 10
+ExecStart = /usr/bin/x11vnc -xkb -reopen -forever -noxrecord -noxfixes -noxdamage -display :0 -auth /var/run/lightdm/root/:0 -usepw 
+ 
+[Install]
+WantedBy = multi-user.target
+

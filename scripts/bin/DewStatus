@@ -1,0 +1,316 @@
+#!/usr/bin/python3
+
+from tkinter import *
+from tkinter import font as tkFont
+import csv
+import time
+import serial
+import sys
+import os
+
+root = Tk()
+root.title("Dew Controller Status")
+root.geometry("500x380")
+
+# argument check
+if len(sys.argv) == 1:
+    print("Error, did not include port argument")
+    sys.exit()
+
+# Variables
+# refresh, loop every 30000 milisec or 30 secs
+refresh=30000
+DEBUG="n"
+SER_PORT=str(sys.argv[1])
+## SER_SPEED=str(sys.argv[2])
+
+def getValues():
+    arduinoData = ser.readline().decode('ascii')
+    return arduinoData
+
+# get all offset values
+def get_offset():
+    CfgOffCh1=eOffCh1.get()
+    CfgOffCh2=eOffCh2.get()
+    CfgOffCh3=eOffCh3.get()
+    print("OffCh1=",+ CfgOffCh1)
+    print("OffCh2=",+ CfgOffCh2)
+    print("OffCh3=",+ CfgOffCh3)
+    
+def CommandEval(commandSent):
+  global TC1
+  global TC2
+  global TC3
+  global PC1
+  global PC2
+  global PC3
+  global RH
+  global DWP
+  global ATMP
+  global BT
+  global ATBIAS
+  
+  # C Command - Temp Probes
+  if commandSent == 'C':
+    #process command string
+    val1,val2,val3 = ReturnVal.split("#")
+    # strip off initial command from response
+    TC1=val1[1:]
+    TC2=val2
+    TC3=val3.rstrip('$\n\r')
+  # B Command - AT Bias
+  elif commandSent == 'B':
+    val1=ReturnVal[1:]
+    ATBIAS=val1.rstrip('$\n\r')
+  # W Command - Power
+  elif commandSent == 'W':
+    val1,val2,val3 = ReturnVal.split("#")
+    PC1=val1[1:]
+    PC2=val2
+    PC3=val3.rstrip('$\n\r')
+  # R Command - Relitive Humidity
+  elif commandSent == 'R':
+    # strip off command response, value, and end character
+    val1=ReturnVal[1:]
+    RH=val1.rstrip('$\n\r')
+  # A Command - Ambient Temp
+  elif commandSent == 'A':
+    val1=ReturnVal[1:]
+    ATMP=val1.rstrip('$\n\r')
+  # D Command - Dew Point
+  elif commandSent == 'D':
+    val1=ReturnVal[1:]
+    DWP=val1.rstrip('$\n\r')
+  elif commandSent == 'K':
+    val1=ReturnVal[1:]
+    BT=val1.rstrip('$\n\r')
+  else:
+      print ("invalid command: " + CommandVal)
+
+# configure the serial connections (the parameters differs on the device you are connecting to)
+ser = serial.Serial(SER_PORT, baudrate = 57600, timeout=1)
+
+# create a send command that sends a string, ie "a3#"
+def sendstring(stringcmd):
+    ser.write(str.encode(stringcmd + '#'))
+    #print(str.encode(stringcmd + '#'))
+    #print(stringcmd + '#')
+
+def CheckValues():
+   global ReturnVal
+   ## commandToSend = input ('Send command: ')
+   for commandToSend in ("B","A","R","D","C","W","K"):
+       ser.write(str(commandToSend).encode())
+       ser.write(str("#").encode())
+       # get the return value for each command
+       ReturnVal=(getValues())
+       ## print (ReturnVal)
+       CommandEval(commandToSend)
+       
+   if DEBUG == "y":
+       # graph data to file
+       print("============================")
+       print("Temperature Probes")
+       print("   Channel 1  - "+TC1)
+       print("   Channel 2  - "+TC2)
+       print("   Channel 3  - "+TC3)
+       print("Dew Strap Power")
+       print("   Channel 1  - "+PC1)
+       print("   Channel 2  - "+PC2)
+       print("   Channel 3  - "+PC3)
+       print("Relative Humdity %  - "+RH)
+       print( "Ambient Temp C - "+ ATMP)
+       print("Dew Point Temp C - "+ DWP)
+       print("Board Temp - "+BT)
+       print("AT Bias - "+ATBIAS)
+       print("============================")
+
+def update():
+    CheckValues()
+    time_string = time.strftime('%H:%M:%S')
+    cpu_temp = measure_temp()
+    # for refresh you need to update all data labels.
+    status_labelATMPdata.config(text=ATMP)
+    status_labelTPCH1data.config(text=TC1)
+    status_labelTPCH2data.config(text=TC2)
+    status_labelTPCH3data.config(text=TC3)
+    status_labelDPCH1data.config(text=PC1)
+    status_labelDPCH2data.config(text=PC2)
+    status_labelDPCH3data.config(text=PC3)
+    status_labelRHdata.config(text=RH)
+    status_labelDPTdata.config(text=DWP)
+    status_labelBTdata.config(text=BT)
+    status_labelTime.config(text=time_string)
+    status_labelCPUTempdata.config(text=cpu_temp)
+    root.after(refresh, update)
+    #cjk
+
+def dewpwrnormal():
+    sendstring("n")
+    # time needed to process command
+    time.sleep(1.5)
+    update()
+
+def dewch1on():
+    sendstring("1")
+    update()
+
+def dewch2on():
+    sendstring("2")
+    update()
+
+def measure_temp():
+    temp = os.popen("vcgencmd measure_temp").readline()
+    temp=temp.rstrip('$\n\r')
+    return (temp.replace("temp=",""))
+
+# quit exits the program
+def quit():
+    root.destroy()
+
+
+################################
+# main
+
+print ("starting up")
+time.sleep(5)
+time_string = time.strftime('%H:%M:%S')
+cpu_temp = measure_temp()
+CheckValues()
+
+# padding
+status_labelPad = Label(root, text="     ", fg="grey").grid(row=0, column=2, pady=5)
+
+# Port
+status_labelPort = Label(root, text="Port:",fg="black")
+status_labelPort.grid(row=1, column=0)
+status_labelTPCH1data = Label(root, text=SER_PORT, relief="ridge", width=12)
+status_labelTPCH1data.grid(row=1, column=1)
+
+#time
+status_labelTime = Label(root, text="Last Update:",fg="black")
+status_labelTime.grid(row=2, column=0)
+status_labelTime = Label(root, text = time_string, relief="ridge", width=12)
+status_labelTime.grid(row=2, column=1)
+
+#cpu temp
+status_labelCPUTemp = Label(root, text="CPU Temp:",fg="black")
+status_labelCPUTemp.grid(row=2, column=2)
+status_labelCPUTempdata = Label(root, text = cpu_temp, relief="ridge", width=12)
+status_labelCPUTempdata.grid(row=2, column=3)
+
+# padding
+status_labelPad = Label(root, text="     ", fg="grey").grid(row=3, column=2)
+
+# Ambient Temp
+status_labelATMP = Label(root, text="Ambient Temp:",fg="blue")
+status_labelATMP.grid(row=4, column=0)
+ 
+status_labelATMPdata = Label(root, text=ATMP, relief="ridge", width=8)
+status_labelATMPdata.grid(row=4, column=1)
+
+
+# PCB TEMP
+status_labelPCTEMP = Label(root, text="PCB Temp:",fg="blue")
+status_labelPCTEMP.grid(row=4, column=2)
+
+status_labelBTdata = Label(root, text=BT, relief="ridge", width=8)
+status_labelBTdata.grid(row=4, column=3)
+
+# Relative Humidity
+status_labelRH = Label(root, text="Humidity:",fg="blue")
+status_labelRH.grid(row=5, column=0)
+ 
+status_labelRHdata = Label(root, text=RH, relief="ridge", width=8)
+status_labelRHdata.grid(row=5, column=1)
+
+
+# Dew Point
+status_labelDPT = Label(root, text="Dew Point:",fg="blue")
+status_labelDPT.grid(row=6, column=0)
+
+status_labelDPTdata = Label(root, text=DWP, relief="ridge", width=8)
+status_labelDPTdata.grid(row=6, column=1)
+
+# Pad Row
+status_labelPad = Label(root, text="     ", fg="grey").grid(row=7, column=2, pady=5)
+
+# Temp
+status_labelTemp = Label(root, text="Temperature", fg="blue")
+status_labelTemp.grid(row=8, column=0)
+
+
+# Power 
+status_labelPower = Label(root, text="Power", fg="blue")
+status_labelPower.grid(row=8, column=2)
+
+
+# channel info for Dew Strip Power
+status_labelDPCH1 = Label(root, text="Channel 1:")
+status_labelDPCH1.grid(row=9, column=2)
+status_labelDPCH1data = Label(root, text=PC1, relief="ridge", padx=5, width=4)
+status_labelDPCH1data.grid(row=9, column=3)
+
+status_labelDPCH2 = Label(root, text="Channel 2:")
+status_labelDPCH2.grid(row=10, column=2)
+status_labelDPCH2data = Label(root, text=PC2, relief="ridge", padx=5, width=4)
+status_labelDPCH2data.grid(row=10, column=3)
+
+status_labelDPCH3 = Label(root, text="Channel 3:")
+status_labelDPCH3.grid(row=11, column=2)
+status_labelDPCH3data = Label(root, text=PC3, relief="ridge", padx=5, width=4)
+status_labelDPCH3data.grid(row=11, column=3)
+
+
+# Temp channel info for probes
+status_labelTPCH1 = Label(root, text="Channel 1:")
+status_labelTPCH1.grid(row=9, column=0)
+status_labelTPCH1data = Label(root, text=TC1, relief="ridge", width=8)
+status_labelTPCH1data.grid(row=9, column=1)
+ 
+status_labelTPCH2 = Label(root, text="Channel 2:")
+status_labelTPCH2.grid(row=10, column=0)
+status_labelTPCH2data = Label(root, text=TC2, relief="ridge", width=8)
+status_labelTPCH2data.grid(row=10, column=1)
+ 
+status_labelTPCH3 = Label(root, text="Channel 3:")
+status_labelTPCH3.grid(row=11, column=0)
+status_labelTPCH3data = Label(root, text=TC3, relief="ridge", width=8)
+status_labelTPCH3data.grid(row=11, column=1)
+ 
+# padding
+status_labelPad = Label(root, text="     ", fg="grey").grid(row=12, column=2, pady=5)
+
+# Data Update
+
+ 
+helv8 = tkFont.Font(family='Helvetica', size=8)
+ 
+ # buttons
+offdewpwr_button = Button(root, text="OFF", font=helv8, width=4, command=dewpwrnormal)
+offdewpwr_button.grid(row=8, column=3)
+
+ch1dewpwr_button = Button(root, text="ON", font=helv8, width=4,  command=dewch1on)
+ch1dewpwr_button.grid(row=9, column=4)
+
+ch2dewpwr_button = Button(root, text="ON", font=helv8, width=4, command=dewch2on)
+ch2dewpwr_button.grid(row=10, column=4)
+
+refresh_button = Button(root, text="Refresh", command=update)
+refresh_button.grid(row=13, column=4)
+
+quit_button = Button(root, text="Quit", command=quit)
+quit_button.grid(row=13, column=0)
+
+## cjk
+# print ("running...")
+root.after(refresh, update)
+
+##while True:
+##    update()
+##    root.update_idletasks()
+##    ##root.update()
+##    time.sleep(10)
+
+root.mainloop() 
+

@@ -1,0 +1,23 @@
+#!/bin/bash
+
+echo "Checking USB devices..."
+ls -la /dev/ttyUSB*
+ls -la /dev/ttyFOC
+ls -la /dev/ttyMNT
+
+echo
+echo "Checking Indi Drivers..."
+ps -ef | grep -v grep | grep -i indi
+
+echo
+
+echo "Checking for USB Devices..."
+usb-devices > /tmp/usb-devices
+grep "Product=QHY5-II" /tmp/usb-devices > /dev/null && echo "Found QHY5-II Camera!"
+grep "Product=ASI533MC Pro" /tmp/usb-devices > /dev/null && echo "Found ZWO ASI533MC Camera!"
+grep "Product=ASI178MM-Cool" /tmp/usb-devices > /dev/null && echo "Found ZWO ASI178-Cool Camera!"
+grep "Product=ZWO EFW" /tmp/usb-devices > /dev/null && echo "Found ZWO Filter!"
+grep "Product=ASI120MM-S" /tmp/usb-devices > /dev/null && echo "Found ZWO ASI120MM-S"
+
+exit
+

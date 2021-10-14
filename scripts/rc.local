@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Added group owner changed to allow IndiWeb Manager to reboot/shutdown
+chmod 660 /run/initctl
+chgrp ekos /run/initctl
+
+exit 0
+

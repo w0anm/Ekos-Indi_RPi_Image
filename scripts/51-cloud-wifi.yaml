@@ -1,0 +1,14 @@
+# This file is generated from information provided by the wifi_setup.sh.  
+# Changes to it will not persist across an instance reboot.  To disable 
+# cloud-init's
+network:
+    renderer: NetworkManager
+    version: 2
+    wifis:
+        wlan0:
+            dhcp4: true
+            optional: true
+            access-points:
+                "<netork_ssid>":
+                    password: "<wifi_passwd>"
+
