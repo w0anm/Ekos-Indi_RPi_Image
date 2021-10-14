@@ -2,6 +2,7 @@ Build script
 
 Takes a newly created image and updates the image to install kstars, indi, and PHD2 latest releases to create a new image.
 
+Documentation is pending.
 
 This is state of change and is being developed.
 
