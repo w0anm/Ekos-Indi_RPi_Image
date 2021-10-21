@@ -30,7 +30,7 @@
 
     # null out old config
     if [ -f $config_filepath ] ; then
-        rm -f $config_filepath
+        sudo rm -f $config_filepath
     fi
 
     cat << _EOF >> /tmp/w_temp
@@ -43,7 +43,7 @@ network:
 _EOF
 
     sudo cp /tmp/w_temp $config_filepath 
-    rm -f /tmp/w_temp
+    sudo rm -f /tmp/w_temp
     echo "Creating new file using:"
     # append content
     echo "    wifis:" | sudo tee -a $config_filepath 

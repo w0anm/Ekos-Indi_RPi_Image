@@ -7,13 +7,19 @@
 echo
 echo "Installing Misc Packages..."
 apt install -y  libraspberrypi-bin
+apt install -y  exfat-fuse exfat-utils
+apt install -y  nfs-common
+
 # desktop
 apt install -y ubuntu-desktop 
+
+# automounter (desktop)
+apt install -y usbmount
 
 # Adding Indi Library Packages
 # Install Stable Release of the INDI Library including all 3rd party drivers: 
 echo
-echo "Adding mutlaqja's Resository..."
+echo "Adding mutlaqja's Repositories for kstars/ekos/indi..."
 apt-add-repository -y ppa:mutlaqja/ppa
 apt -y update
 
@@ -44,8 +50,6 @@ apt install -y lightdm-gtk-greeter-settings
 echo
 echo "Installing x11vnc Packages..."
 apt install -y x11vnc
-# password
-
 
 # removals
 echo

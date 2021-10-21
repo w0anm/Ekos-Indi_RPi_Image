@@ -29,7 +29,8 @@
 
 #######################################################################
 
-DEBUG=N
+## if DEBUG is null, use spinner, else DEBUG=Y or DEBUG=N
+##DEBUG=Y 
 ##set -x
 
 # source
@@ -63,15 +64,24 @@ P1_OFFSET=$(expr "$P1_START"  \* 512)
 P1_SIZELIMIT=$(expr "$P1_END" \* 512)
 P2_OFFSET=$(expr "$P2_START" \* 512)
 
+
 if [ ! -z "$DEBUG" ] ; then
   echo "p1_start=$P1_START"
   echo "p1_end=$P1_END"
   echo "p1_offset=$P1_OFFSET"
   echo "p1_sizelimit=$P1_SIZELIMIT"
   echo "p2_start=$P2_START"
+  echo "p2_end=$P2_END (notused)"
   echo "p2_offset=$P2_OFFSET"
 fi
 
+# setup the DEVICE variable for the loop device
+DEVICE=$(/sbin/losetup -f)
+if [ -z "$DEVICE" ]
+then
+  echo "Error setting up loop device."
+  exit 1
+fi
 # subroutines
 
 clean-up()
@@ -83,6 +93,8 @@ clean-up()
     # delete loop device
     if [ -n "$DEVICE" ] ; then
        losetup -d $DEVICE
+    else
+       echo "Device not defined."
     fi
 }
 
@@ -126,51 +138,21 @@ spinner()
 }
 
 setup_lo() {
-  # losetup -o offset = (partion 1 start) * 512
-  # losetup --size limit = (p1_end) * 512
-  DEVICE1=$(/sbin/losetup -f)
-  if [ -z "$DEVICE1" ]
-  then
-    echo "Error setting up loop device."
-    exit 1
-  fi
-  /sbin/losetup -f -o $P1_OFFSET --sizelimit $P1_SIZELIMIT "$IMAGE_FILE"
+  # just need to use losetup and mount the imagefile using loop device
+  /sbin/losetup -f "$IMAGE_FILE"
   if [ $? -ne 0 ]
   then
     echo "Error setting up loop device."
-    exit 1
-  fi
-
-  DEVICE2=$(/sbin/losetup -f)
-  if [ -z "$DEVICE2" ]
-  then
-    echo "Error setting up loop device."
-    /sbin/losetup -d "$DEVICE1"
-    exit 1
-  fi
-  /sbin/losetup -f -o $P2_OFFSET  "$IMAGE_FILE"
-
-  if [ $? -ne 0 ]
-  then
-    echo "Error setting up loop device."
-    /sbin/losetup -d "$DEVICE1"
     exit 1
   fi
 }
 
 delete_lo() {
-  /sbin/losetup -d "$DEVICE1"
+  /sbin/losetup -d "$DEVICE"
   if [ $? -ne 0 ]
   then
     echo "Error removing loop device."
-    /sbin/losetup -d "$DEVICE2"
-    exit 1
-  fi
-
-  /sbin/losetup -d "$DEVICE2"
-  if [ $? -ne 0 ]
-  then
-    echo "Error removing loop device."
+    /sbin/losetup -d "$DEVICE"
     exit 1
   fi
 }
@@ -180,7 +162,7 @@ mount_image() {
   then
     mkdir -p  $MOUNTPATH
   fi
-  mount "$DEVICE2" $MOUNTPATH
+  mount "${DEVICE}p2" $MOUNTPATH
   if [ $? -ne 0 ]
   then
     echo "Error mounting root partition. Wrong image file?"
@@ -192,7 +174,7 @@ mount_image() {
   then
     mkdir -p ${MOUNTPATH}${BOOTMOUNT}
   fi
-  mount "$DEVICE1" ${MOUNTPATH}${BOOTMOUNT}/
+  mount "${DEVICE}p1" ${MOUNTPATH}${BOOTMOUNT}/
   if [ $? -ne 0 ]
   then
     echo "Error mounting boot partition. Wrong image file?"
@@ -244,15 +226,16 @@ create_image() {
   SEEKMB=$(expr $IMAGE_SIZE - 1)
   # command setup
   pwd
-  (dd count=1 seek="$SEEKMB" if=/dev/zero of="$IMAGE_FILE" bs=1M) &
+  (dd count=1 seek="$SEEKMB" if=/dev/zero of="$IMAGE_FILE" bs=1M ) &
+  ##(dd count=1 seek="$SEEKMB" if=/dev/zero of="$IMAGE_FILE" bs=1M ) 
+  pid=$!
   # had to get pid this way
   # pid=$(ps | grep dd | awk '{print $1}')
-  pid=$!
 
-  echo -n "    Working [$pid]...";
+  echo -n "Creating image file.   Working [$pid]...";
 
+  # spinner for dd process as it takes a long time...
   if [ "$DEBUG" = "" ] && [ "$QUIET" = "" ] ; then
-  # if [ -z "$DEBUG" ]; then
     # if DEBUG is empty (or QUIET) -  use spinner
     while [ -d /proc/$pid ] ; do
          spinner
@@ -265,14 +248,16 @@ create_image() {
     done
   fi
 
+  # setup loop device (loop0)
+  setup_lo
+
+  # create the partions (loopXp1/loopXp2)
   LASTSECTOR=$(expr "$IMAGE_SIZE" \* 2048 - 1)
-  sync
-  sleep 5
   parted "$IMAGE_FILE" << EOF
 mktable msdos
 unit s
 mkpart primary fat32 $P1_START $P1_END
-mkpart primary $P2_START $LASTSECTOR
+mkpart primary ext4 $P2_START $LASTSECTOR
 quit
 EOF
   if [ $? -ne 0 ]
@@ -281,10 +266,10 @@ EOF
     exit 1
   fi
 
-  setup_lo
-
+  # now partprobe the loop device
+  partprobe $DEVICE
+  mkfs.vfat -I ${DEVICE}p1
   # added -I option
-  mkfs.vfat  -I "$DEVICE1"
   if [ $? -ne 0 ]
   then
     echo "Error creating FAT partition."
@@ -292,14 +277,14 @@ EOF
     exit 1
   fi
 
-  mkfs.ext4 "$DEVICE2"
+  mkfs.ext4 "${DEVICE}p2"
   if [ $? -ne 0 ]
   then
     echo "Error creating ext4 partition."
     delete_lo
     exit 1
   fi
-
+  sleep 30
   mount_image
 
   mkdir ${MOUNTPATH}/dev ${MOUNTPATH}/media ${MOUNTPATH}/mnt ${MOUNTPATH}/proc ${MOUNTPATH}/run ${MOUNTPATH}/sys ${MOUNTPATH}/tmp
@@ -359,24 +344,15 @@ do_backup () {
 }
 
 fix_partuuid () {
-  #remount
-  DEVICE=$(/sbin/losetup -f)
-  if [ -z "$DEVICE" ]
-  then
-    echo "Error setting up loop device for remount."
-    exit 1
-  fi
-
   # mount image again
   losetup -f "$IMAGE_FILE"
   partprobe "$DEVICE"
-  LDEVPART=p
-  mount ${DEVICE}${LDEVPART}2  ${MOUNTPATH} 
-  mount ${DEVICE}${LDEVPART}1  ${MOUNTPATH}${BOOTMOUNT}
+  mount ${DEVICE}p2  ${MOUNTPATH} 
+  mount ${DEVICE}p1  ${MOUNTPATH}${BOOTMOUNT}
 
   # get new PARTUUID
-  P1_NEW_PUUID=$(lsblk -o PARTUUID ${DEVICE}${LDEVPART}1 | grep -v PARTUUID)
-  P2_NEW_PUUID=$(lsblk -o PARTUUID ${DEVICE}${LDEVPART}2 | grep -v PARTUUID)
+  P1_NEW_PUUID=$(lsblk -o PARTUUID ${DEVICE}p1 | grep -v PARTUUID)
+  P2_NEW_PUUID=$(lsblk -o PARTUUID ${DEVICE}p2 | grep -v PARTUUID)
 
   # backup files to be changed
   ## moved to conf file

@@ -22,7 +22,7 @@ install -o root -g root -m 755 wifi_setup.sh /usr/local/bin/wifi_setup.sh
 install -o root -g root -m 644 566121.jpg /usr/share/backgrounds/566121.jpg
 install -o root -g root -m 644 566122.jpg /usr/share/backgrounds/566122.jpg
 install -o root -g root -m 0440  all_ekos /etc/sudoers.d/all_ekos
-install -o root -g root -m 755 image_config.sh /usr/local/bin/image_config.sh
+install -o root -g root -m 755 vnc_greeter_control.sh /usr/local/bin/vnc_greeter_control.sh
 install -o root -g root -m 644 x11vnc.service /lib/systemd/system/x11vnc.service
 install -o root -g root -m 644 indiwebmanager.service /etc/systemd/system/indiwebmanager.service
 install -o ekos -g ekos -m 755 -d /home/ekos/bin
