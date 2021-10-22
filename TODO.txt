@@ -1,8 +1,5 @@
-When adding user, check password input (done)
-
-When updating x11vnc, update passwd
-
 When updating hostname, input hostname, limited to alpha numerics and
-dashes
+dashes (currently no checks)
+
 
 
