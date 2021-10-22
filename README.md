@@ -4,7 +4,8 @@ Takes a newly created image and updates the image to install kstars, indi, and P
 
 Documentation is pending.
 
-This is state of change and is being developed.
+This is in state of change/devlopment and not ready for release.
+
 
 01-network-manager-all.yaml		Network netplan
 50-cloud-init.yamli			Cloud netplan
