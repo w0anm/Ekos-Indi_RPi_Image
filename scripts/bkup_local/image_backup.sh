@@ -102,7 +102,7 @@ clear
 cat << _EOF
 
 +=========================================================================+
-| Please insert an exFAT or ntfs formated usb thumb drive for             |
+| Please insert an exFAT or ntfs formatted usb thumb drive for             |
 | your backup.                                                            |
 |                                                                         |
 | Press any key when disk has been inserted, or  (Ctl-C) to abort..       |
