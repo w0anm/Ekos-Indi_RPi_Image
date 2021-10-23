@@ -47,6 +47,11 @@ sudo apt-get install -y build-essential git cmake pkg-config \
 	libwxgtk3.0-gtk3-dev wx-common wx3.0-i18n  \
 	gettext zlib1g-dev libx11-dev libcurl4-gnutls-dev
 
+# if phd2 directory is already present, then mv the old directory before
+# cloning
+if [ -d /home/ekos/phd2 ] ; then
+    mv /home/ekos/phd2 /home/ekos/phd2_$(date '+%Y%m%d%M.%S')
+fi
 
 cd /home/ekos
 git clone https://github.com/OpenPHDGuiding/phd2

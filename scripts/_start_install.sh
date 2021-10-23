@@ -56,6 +56,10 @@ echo
 echo "Disable Power Sleep Function..."
 systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
 
+echo
+echo "Cleanup..."
+bash /root/cleanup.sh
+
 # reboot
 shutdown -r now
 

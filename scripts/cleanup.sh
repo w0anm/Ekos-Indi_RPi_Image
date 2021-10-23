@@ -9,8 +9,7 @@ rm -rf /home/ekos/.cache/mozilla
 rm -rf /root/scripts
 rm -f /etc/netplan/51-cloud-wifi.yaml
 cp /dev/null /root/.bash_history 
-rm -f /root/cleanup /root/*.tar
-
+rm -f /root/*.tar
 
 # cleanup users (ekos/ubuntu)
 cp /dev/null /home/ekos/.bash_history 
@@ -33,3 +32,6 @@ rm -f /boot/firmware/scripts.tar
 
 # change the hostname to default
 echo "indi-server" > /etc/hostname
+
+rm -f /root/cleanup.sh
+
