@@ -1,6 +1,6 @@
 Installation
 
-Download the zip file found on the maind Code page:  Ekos_Indi_Rpi4_v6_dist.zip
+Download the zip file found on the main Code page:  Ekos_Indi_Rpi4_v6_dist.zip
 
 You do not need to download/clone the entire repository, only the distribution zip file located on the main code page.
 
