@@ -1,6 +1,8 @@
 # This file is generated from information provided by the wifi_setup.sh.  
-# Changes to it will not persist across an instance reboot.  To disable 
-# cloud-init's
+# Changes to it will not persist across an instance reboot.  To disable cloud-init's
+# network configuration capabilities, write a file
+# /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg with the following:
+# network: {config: disabled}
 network:
     renderer: NetworkManager
     version: 2

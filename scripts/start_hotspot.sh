@@ -3,11 +3,14 @@
 HOTSPOTNAME=EkosHotSpot
 PASSWORD=Ekos4192
 
+nmcli radio wifi on
+
 echo "Starting Hotspot..."
 sudo nmcli d wifi hotspot ifname wlan0 ssid ${HOTSPOTNAME} password ${PASSWORD}
 
-echo "Control-C to abort/stop..."
 
+sudo nmcli device wifi show-password
 
+nmcli connection show
 
 

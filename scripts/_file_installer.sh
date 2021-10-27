@@ -26,7 +26,8 @@ install -o root -g root -m 755 vnc_greeter_control.sh /usr/local/bin/vnc_greeter
 install -o root -g root -m 644 x11vnc.service /lib/systemd/system/x11vnc.service
 install -o root -g root -m 644 indiwebmanager.service /etc/systemd/system/indiwebmanager.service
 install -o ekos -g ekos -m 755 -d /home/ekos/bin
-install -o ekos -g ekos -m 755 start_hotspot.sh /home/ekos/bin/start_hotspot.sh
+install -o root -g root -m 755 start_hotspot.sh /usr/local/bin/start_hotspot.sh
+install -o root -g root -m 755 stop_hotspot.sh /usr/local/bin/stop_hotspot.sh
 install -o root -g root -m 755 rc.local /etc/rc.local
 
 # /boot/firmware files
