@@ -32,18 +32,14 @@ install -o root -g root -m 644 default-wifi-powersave-on.conf /etc/NetworkManage
 install -o root -g root -m 644 usbmount.rules /lib/udev/rules.d/usbmount.rules
 install -o root -g root -m 755 rc.local /etc/rc.local
 
+#special scripts
+install -o root -g root -m 755 sd_to_ssd_conv.sh /root/sd_to_ssd_conv.sh
+install -o root -g root -m 755 BootFix.sh /root/BootFix.sh
+
 # /boot/firmware files
 install -o root -g root -m 755 usercfg.txt /boot/firmware/usercfg.txt
 install -o root -g root -m 644 lightdm-gtk-greeter.conf /etc/lightdm/lightdm-gtk-greeter.conf
-
-if [ -f /dev/sda1 ] ; then
-    install -o root -g root -m 755 auto_decompress_kernel /boot/auto_decompress_kernel
-    install -o root -g root -m 755 cmdline.txt_sda /boot/firmware/cmdline.txt
-    install -o root -g root -m 755 999_decompress_rpi_kernel /etc/apt/apt.conf.d/999_decompress_rpi_kernel
-
-else
-    install -o root -g root -m 755 cmdline.txt_mmblk /boot/firmware/cmdline.txt
-fi
+install -o root -g root -m 755 cmdline.txt_mmblk /boot/firmware/cmdline.txt
 
 # install phd2 install script
 install -o ekos -g ekos -m 755 _phd2_install.sh /home/ekos/_phd2_install.sh

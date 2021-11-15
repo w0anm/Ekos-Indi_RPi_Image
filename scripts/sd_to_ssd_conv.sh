@@ -168,7 +168,7 @@ else
    echo -e "\e[32mMD5 generated Succesfully\e[0m"
 fi
 
-echo "Unmouting $SSD directory and cleaning up..."
+echo "Unmounting $SSD directory and cleaning up..."
 echo
 
 # umount filesystems
