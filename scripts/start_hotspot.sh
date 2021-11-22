@@ -1,15 +1,17 @@
-TSPOTNAME=EkosHotSpot
+#!/bin/bash
+
+HOTSPOTNAME=EkosHotSpot
 PASSWORD=Ekos4192
 
 # Rpi4 uses 20 Mhz Band with for 5Ghz wifi
 
 # uncomment desired Band (2.4/5 Ghz), only one should be commented out
-#BAND=bg   #2.4Ghz
-BAND=a    #5Ghz
+BAND=bg   #2.4Ghz
+#BAND=a    #5Ghz
 
 # Select Channel, again, only 1 should be commented out
-#CHNL=2    #2.4Ghz
-CHNL=60   #5Ghz
+CHNL=2    #2.4Ghz
+#CHNL=60   #5Ghz
 
 nmcli radio wifi on
 
