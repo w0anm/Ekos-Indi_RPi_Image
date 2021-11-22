@@ -32,7 +32,7 @@ echo "$HOSTNAME" > /etc/hostname
 hostname $HOSTNAME
 
 # install ekos user
-useradd -c "Ekos User" -s /bin/bash -m -G admin,dialout ekos
+useradd -c "Ekos User" -s /bin/bash -m -G admin,dialout,video ekos
 echo
 echo "Enter the password for Ekos..."
 passwd ekos

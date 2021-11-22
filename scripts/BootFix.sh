@@ -77,6 +77,8 @@ initramfs initrd.img followkernel
 [all]
 arm_64bit=1
 device_tree_address=0x03000000
+# correct cpu loading issue by setting below:
+dtparam=sd_poll_once
 
 # The following settings are defaults expected to be overridden by the
 # included configuration. The only reason they are included is, again, to

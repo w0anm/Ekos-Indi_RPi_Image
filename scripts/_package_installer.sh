@@ -28,6 +28,10 @@ echo
 echo "Adding Indi driver packages and dependencies..."
 sudo apt install -y indi-full kstars-bleeding
 
+echo
+echo "Adding Guide Star Catalogue (for simulator)..."
+sudo apt install -y gsc
+
 # Web Manager Install
 # compile
 echo

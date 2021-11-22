@@ -15,7 +15,7 @@ if [ $(id -u) != 0 ]; then
 fi
 
 echo
-echo "This script converts the Ekos/Ubuntu OS contains to an SSD device.."
+echo "This script converts the Ekos/Ubuntu SD contents to an SSD device.."
 echo
 echo "Hit any key to continue, or control-C to abort!"
 read $ANS
