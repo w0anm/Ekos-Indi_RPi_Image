@@ -8,6 +8,41 @@ SSD=/ssd
 SSD_DEV=/dev/sda
 RSYNCLOG=/tmp/rsync_log
 
+# ckyorn function with defaults
+ckyorn () {
+    return=0
+    if [ "$1" = "y" ] ; then
+        def="y"
+        sec="n"
+    else
+        def="n"
+        sec="y"
+    fi
+
+    while [ $return -eq 0 ]
+    do
+        read -e -p "([$def],$sec): ? " answer
+        case "$answer" in
+                "" )    # default
+                        printf "$def"
+                        return=1 ;;
+        [Yy])   # yes
+                        printf "y"
+                        return=1
+                        ;;
+        [Nn] )   # no
+                        printf "n"
+                        return=1
+                        ;;
+                   *)   printf "    ERROR: Please enter y, n or return.  " >&2
+                        printf ""
+                        return=0 ;;
+        esac
+    done
+
+}
+
+
 # Run as sudo
 if [ $(id -u) != 0 ]; then
    echo "Please run using sudo ./.sd_to_ssd_conv.sh  Exiting..."
@@ -168,10 +203,24 @@ else
    echo -e "\e[32mMD5 generated Succesfully\e[0m"
 fi
 
+# installation of astrometic files
+
+echo    "Do you want to install astrometric fits files (for local plate solving)"
+echo -n "on our ssd device?" ; ANS=$(ckyorn n)
+
+if [ "$ANS" = "y" ] ; then
+    if [ ! -d $SSD/astrometry ] ; then
+        mkdir $SSD/astrometry
+    fi
+    cd $SSD/astrometry
+    /usr/local/bin/get_astrometry_index.sh
+fi
+
 echo "Unmounting $SSD directory and cleaning up..."
 echo
 
 # umount filesystems
+sync; sync
 umount $SSD/boot/firmware
 umount $SSD
 e2label /dev/sda2 ssd-writable
