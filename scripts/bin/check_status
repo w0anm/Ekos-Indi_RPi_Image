@@ -2,8 +2,8 @@
 
 echo "Checking USB devices..."
 ls -la /dev/ttyUSB*
-ls -la /dev/ttyFOC
-ls -la /dev/ttyMNT
+# ls -la /dev/ttyFOC
+# ls -la /dev/ttyMNT
 
 echo
 echo "Checking Indi Drivers..."
