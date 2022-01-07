@@ -216,9 +216,10 @@ cd /
 sleep 5
 echo "Unmounting NFS share..."
 
-if [ -z BOOTMNTFLAG ] ; then
-    umount $BOOTMNT
-fi
+# not needed:
+# if [ -z BOOTMNTFLAG ] ; then
+#     umount $BOOTMNT
+# fi
 
 umount $LOCAL_MOUNTPT
 

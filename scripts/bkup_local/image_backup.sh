@@ -127,7 +127,8 @@ echo "Premount-$PREMOUNTPT"
 if [ -z "$PREMOUNTPT" ] ; then
     echo "ERROR media not found! Aborting."
     echo
-    umount $BOOTMNT
+    # not needed:
+    #umount $BOOTMNT
     exit 1
 fi
 
@@ -197,7 +198,8 @@ sync;sync
 echo
 echo "    OK to remove USB drive ..."
 
-umount $BOOTMNT
+#not needed:
+#umount $BOOTMNT
 
 echo
 echo "Completed."
