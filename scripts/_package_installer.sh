@@ -55,10 +55,23 @@ echo
 echo "Installing x11vnc Packages..."
 apt install -y x11vnc
 
+# Misc Programs
+echo
+echo "Installing ftools-fv (fits editor)..."
+apt install -y ftools-fv
+
+# file manager
+echo
+echo "Installing Nautis File Manager..."
+apt install -y nautilus
+
+#####################################################
 # removals
+#####################################################
+
+## snap removal, not needed.
 echo
 echo "Removing Snap from server, not needed..."
-## snap removal, not needed.
 snap list
 snap remove --purge lxd
 snap remove --purge core18
@@ -70,6 +83,10 @@ apt autoremove -y --purge snapd gnome-software-plugin-snap
 apt autoremove -y --purge snapd gnome-software-plugin-snap
 apt-mark hold snapd
 
+# Auto remove any files not needed
+echo
+echo "Remove an files not needed..."
+apt autoremove -y
 
 exit
 

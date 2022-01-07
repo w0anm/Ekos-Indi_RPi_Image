@@ -28,6 +28,7 @@ install -o root -g root -m 644 indiwebmanager.service /etc/systemd/system/indiwe
 install -o ekos -g ekos -m 755 -d /home/ekos/bin
 install -o root -g root -m 755 start_hotspot.sh /usr/local/bin/start_hotspot.sh
 install -o root -g root -m 755 stop_hotspot.sh /usr/local/bin/stop_hotspot.sh
+install -o root -g root -m 755 get_astrometry_index.sh /usr/local/bin/get_astrometry_index.sh
 install -o root -g root -m 644 default-wifi-powersave-on.conf /etc/NetworkManager/conf.d/default-wifi-powersave-on.conf
 install -o root -g root -m 644 usbmount.rules /lib/udev/rules.d/usbmount.rules
 install -o root -g root -m 755 rc.local /etc/rc.local
