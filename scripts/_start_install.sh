@@ -24,7 +24,7 @@ dpkg-reconfigure tzdata
 HOSTNAME_DEF="indi-server"
 echo
 echo "Hostname must be alphanumeric and only use  dash '-' for the symbol."
-echo -n "Enter the new hostname for this server [$HOSTNAME_DEF]" ; read HOSTNAME
+echo -n "Enter the new hostname for this server [$HOSTNAME_DEF] " ; read HOSTNAME
 if [ -z "$HOSTNAME" ] ; then
     HOSTNAME=$HOSTNAME_DEF
 fi
@@ -46,6 +46,9 @@ bash _package_installer.sh
 echo
 echo "Install various files for services and executables..."
 bash _file_installer.sh
+
+echo "Install Ekos Desktop Directory..."
+bash _ekos_desktop.sh
 
 echo
 echo "Starting Services"

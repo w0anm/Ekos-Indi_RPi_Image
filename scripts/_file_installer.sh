@@ -26,8 +26,11 @@ install -o root -g root -m 755 vnc_greeter_control.sh /usr/local/bin/vnc_greeter
 install -o root -g root -m 644 x11vnc.service /lib/systemd/system/x11vnc.service
 install -o root -g root -m 644 indiwebmanager.service /etc/systemd/system/indiwebmanager.service
 install -o ekos -g ekos -m 755 -d /home/ekos/bin
+install -o ekos -g ekos -m 755 exposure_seq.sh /home/ekos/bin/exposure_seq.sh
+install -o ekos -g ekos -m 755 ekos_job_schedule.sh /home/ekos/bin/ekos_job_schedule.sh
 install -o root -g root -m 755 start_hotspot.sh /usr/local/bin/start_hotspot.sh
 install -o root -g root -m 755 stop_hotspot.sh /usr/local/bin/stop_hotspot.sh
+install -o root -g root -m 755 sysinfo /usr/local/bin/sysinfo
 install -o root -g root -m 755 get_astrometry_index.sh /usr/local/bin/get_astrometry_index.sh
 install -o root -g root -m 644 default-wifi-powersave-on.conf /etc/NetworkManager/conf.d/default-wifi-powersave-on.conf
 install -o root -g root -m 644 usbmount.rules /lib/udev/rules.d/usbmount.rules

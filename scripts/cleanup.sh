@@ -30,8 +30,5 @@ cp /dev/null /home/ubuntu/.ssh/known_hosts
 rm -f /boot/firmware/run_first.sh
 rm -f /boot/firmware/scripts.tar
 
-# change the hostname to default
-echo "indi-server" > /etc/hostname
-
 rm -f /root/cleanup.sh
 
