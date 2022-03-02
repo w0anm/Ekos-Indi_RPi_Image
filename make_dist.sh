@@ -8,12 +8,13 @@ fi
 
 echo
 echo "Creating script.tar file..."
-tar script.tar script
+tar cf scripts.tar scripts
 
 echo
 echo "Copying files to distribution directory..."
-mv script.tar ./dist/$DIST/.
-cp script/run_first.sh ./dist/$DIST/.
+mv scripts.tar ./dist/$DIST/.
+cp scripts/run_first.sh ./dist/$DIST/.
+cp scripts.tar ./dist/$DIST/.
 cp Ekos_Indi_SD_Install.pdf ./dist/$DIST/.
 
 echo
