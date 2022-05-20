@@ -2,6 +2,9 @@
 
 # Start installation
 
+# Install Special Site Files, uncomment out below
+# SPECIAL_FILES="yes"
+
 echo "Interactive script to be executed as root..."
 if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root" 
@@ -46,6 +49,12 @@ bash _package_installer.sh
 echo
 echo "Install various files for services and executables..."
 bash _file_installer.sh
+
+if [ -z "$SPECIAL_FILES" ] ; then
+    echo
+    echo "Install special site files.."
+    bash _special_files.sh
+fi
 
 echo "Install Ekos Desktop Directory..."
 bash _ekos_desktop.sh

@@ -211,9 +211,15 @@ echo -n "on our ssd device?" ; ANS=$(ckyorn n)
 if [ "$ANS" = "y" ] ; then
     if [ ! -d $SSD/astrometry ] ; then
         mkdir $SSD/astrometry
+        chown ekos.ekos $SSD/astrometry
+        chmod 755 $SSD/astrometry
     fi
     cd $SSD/astrometry
     /usr/local/bin/get_astrometry_index.sh
+
+    # set permissions
+    chown ekos.ekos $SSD/astrometry/*
+    chmod 644 $SSE/astrometry/*
 fi
 
 echo "Unmounting $SSD directory and cleaning up..."
@@ -223,7 +229,7 @@ echo
 sync; sync
 umount $SSD/boot/firmware
 umount $SSD
-e2label /dev/sda2 ssd-writable
+# e2label /dev/sda2 ssd-writable # already done 
 
 # clean up mount directory
 if [ -d $SSD ] ; then

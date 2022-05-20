@@ -1,0 +1,17 @@
+# for Ekos Serial Devices
+#
+# Dew Controller
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", ATTRS{devnum}=="6", SYMLINK+="ttyDEW"
+#
+# mount
+SUBSYSTEM=="tty", ATTRS{idVendor}=="06cd", ATTRS{idProduct}=="0121", SYMLINK+="ttyMNT"
+
+# focuser attached to ASI178
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", ATTRS{devnum}=="14", SYMLINK+="ttyFOC"
+
+# focuser attached to ASI533
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", ATTRS{devnum}=="9", SYMLINK+="ttyFOC"
+# or#
+#
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", ATTRS{devnum}=="10", SYMLINK+="ttyFOC"
+
