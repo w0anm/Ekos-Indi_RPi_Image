@@ -30,6 +30,7 @@ install -o ekos -g ekos -m 755 exposure_seq.sh /home/ekos/bin/exposure_seq.sh
 install -o ekos -g ekos -m 755 ekos_job_schedule.sh /home/ekos/bin/ekos_job_schedule.sh
 install -o root -g root -m 755 start_hotspot.sh /usr/local/bin/start_hotspot.sh
 install -o root -g root -m 755 stop_hotspot.sh /usr/local/bin/stop_hotspot.sh
+install -o root -g root -m 755 netcheck.sh /usr/local/bin/netcheck.sh
 install -o root -g root -m 755 sysinfo /usr/local/bin/sysinfo
 install -o ekos -g ekos -m 755  -d /astrometry
 install -o root -g root -m 755 get_astrometry_index.sh /usr/local/bin/get_astrometry_index.sh

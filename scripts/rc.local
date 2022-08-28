@@ -4,5 +4,14 @@
 chmod 660 /run/initctl
 chgrp ekos /run/initctl
 
+# if enable_hotspot is present start hotspot immediately, else
+# do netcheck.sh and see if none of the network connections are
+# present before starting up the hotspot
+if [ -f /boot/firmware/enable_hotspot ] ; then
+    /usr/local/bin/start_hotspot.sh
+else
+    /usr/local/bin/netcheck.sh &
+fi
+
 exit 0
 
