@@ -1,0 +1,30 @@
+#!/bin/bash
+
+#1275  nmcli connection delete a4a1a7e1-fb39-4a4c-8776-471a04a082e4 Hotspot-1
+#1276  nmcli connection delete ccebf719-14be-4462-8df4-f87d1035a1d5 Hotspot-2
+#1277  nmcli connection delete 37a0eacb-bd06-47a9-863c-edf636a1675b Hotspot-3
+#1278  nmcli connection show
+
+# get connection list with name and UUID that is obsoleted:
+
+##nmcli connection show | grep "Hotspot-" 
+## test
+## Old_Connections="Hotspot-1                a4a1a7e1-fb39-4a4c-8776-471a04a082e4  wifi      --     
+# Hotspot-2                ccebf719-14be-4462-8df4-f87d1035a1d5  wifi      -- "    
+Old_Connections=$(sudo nmcli connection show | grep "Hotspot-") 
+
+#read the variable, set UUID and NAME
+IFS=$(echo -en "\n\b")
+for line in $Old_Connections; do
+    UUID=$(echo $line | awk '{print $2}')
+    NAME=$(echo $line | awk '{print $1}')
+    sudo nmcli connection delete $UUID  $NAME
+    # echo "sudo nmcli connection delete $UUID  $NAME"
+done
+
+#display current list:
+sudo nmcli connection show
+
+
+
+

@@ -45,7 +45,7 @@ systemctl stop systemd-resolved
 # remove cloud configuration
 echo "Disabling cloud network automation config..."
 
-if [ ! -f etc/cloud/cloud.cfg.d/99-disable-network-config.cfg ] ; then
+if [ ! -f /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg ] ; then
     echo "network: {config: disabled}" > /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
 fi
 

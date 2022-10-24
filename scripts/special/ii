@@ -1,0 +1,9 @@
+
+
+NOTE: The following is only guaranteed to work with nmcli v1.22 (because that's what version I have), the latest is probably very similar but, in my case there's a random -- required; it is in the documentation specified for that command. Check your version with nmcli -v then check the specific documentation here >>Network Manager (after you click your version click the nmcli link)
+
+I.e., for Version 1.2
+
+nmcli con add con-name "&%TEST%&" type wifi ifname mlan0 ssid "&%SSIDNAME%&" -- wifi-sec.key-mgmt wpa-psk wifi-sec.psk "&%PASSPHRASE%&" ipv4.method manual ipv4.address 192.168.1.51/16 ipv4.dns 8.8.8.8,8.8.8.4 ipv4.gateway 192.168.1.1
+
+

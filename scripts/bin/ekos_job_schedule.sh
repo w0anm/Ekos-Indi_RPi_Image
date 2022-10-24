@@ -2,8 +2,8 @@
 
 # Author: Chris Kovacs
 # Date Created:
-# Last Modified:2022.01.07
-# Version: 0.1a
+# Last Modified:
+# Version: 0.1
 # Description:
    # This script creates exposure and  target sequences for ekos.
    # This script does not support multiple jobs or mosaics jobs.
@@ -11,30 +11,32 @@
 
 # Usage: ekos_job_schedule.sh
 
-####### Configuration of equipment #######
+# Add configuration of equipment?
 
 MAIN_CCD="ZWO CCD ASI533MC Pro"
-EQUIP_PROFILE="astro-iEQ45Pro-WO73_int"
+EQUIP_PROFILE="GSO_asi533_phd2"
 FILTER_WHEEL=""       # need to be setup
-GUIDE_DEV="3.0"
+GUIDE_DEV="2.5"
 GUIDE_START_DEV="2.0"
-
-####### started start condition #######
+#started start condition
 START_CONDITION="ASAP"
-
-####### date/time condition #######
+# date/time condition
 #START_DATE="2021-08-30"
 #START_TIME="00:20:00"
 #START_CONDITION="value='${START_DATE}T${START_TIME}'>At"
 
-####### Startup and Shutdown Process #######
 STARTUP_PROCEDURE="<Procedure>UnparkMount</Procedure>"
 
-####### File setup #######
-FITS_DIRECTORY=~/Kstars/Astro_Working
+TRACK="Track"
+ALIGN="Align"
+GUIDE="Guide"
+FITS_DIRECTORY=/home/ekos/Kstars/Astro_Working
 SEQ_DIR=~/Kstars/Job_Sequences
-
 ESQFILE=""
+
+if [ ! -f "$SEQ_DIR" ] ; then
+    mkdir -p $SEQ_DIR
+fi
 
 # Misc.
 ## Num  Colour    #define         R G B
@@ -144,7 +146,7 @@ ckyorn () {
 
 CreateExposureSeq() {
   #default values
-  EXPOSURE_DEF=90
+  EXPOSURE_DEF=60
   CAMTEMP_DEF=-10
   FILTER_DEF="Lum"
   TYPE_DEF="Light"
@@ -152,7 +154,8 @@ CreateExposureSeq() {
   IMGCOUNT_DEF=30
   GAIN_DEF=100
   OFFSET_DEF=10
-  REFOCUS=60
+
+  REFOCUS=120
 
   echo
   echo "${green}***** Setup Camera Exposure Sequence *****"
@@ -211,14 +214,11 @@ CreateExposureSeq() {
   cat << _EOF > $EXPOSURE_SEQ
 <?xml version="1.0" encoding="UTF-8"?>
 <SequenceQueue version='2.1'>
+<Observer>Chris Kovacs</Observer>
 <CCD>ZWO CCD ASI533MC Pro</CCD>
 <FilterWheel>--</FilterWheel>
 <GuideDeviation enabled='true'>${GUIDE_DEV}</GuideDeviation>
 <GuideStartDeviation enabled='true'>${GUIDE_START_DEV}</GuideStartDeviation>
-_EOF
-
-  # Focus
-  cat <<_EOF >> $EXPOSURE_SEQ
 <Autofocus enabled='false'>0</Autofocus>
 <RefocusOnTemperatureDelta enabled='true'>2</RefocusOnTemperatureDelta>
 <RefocusEveryN enabled='false'>${REFOCUS}</RefocusEveryN>
@@ -239,10 +239,11 @@ _EOF
 <H>3008</H>
 </Frame>
 <Temperature force='true'>${CAMTEMP}</Temperature>
+<Filter>${FILTER_XML}</Filter>
 <Type>${TYPE}</Type>
 <Prefix>
 <RawPrefix>${RAWPREFIX}</RawPrefix>
-<FilterEnabled>0</FilterEnabled>
+<FilterEnabled>1</FilterEnabled>
 <ExpEnabled>1</ExpEnabled>
 <TimeStampEnabled>1</TimeStampEnabled>
 </Prefix>
@@ -369,16 +370,15 @@ _EOF
 <Constraints>
 <Constraint value='10'>MinimumAltitude</Constraint>
 <Constraint>EnforceTwilight</Constraint>
-<Constraint>EnforceArtificialHorizon</Constraint>
 </Constraints>
 <CompletionCondition>
 <Condition>Sequence</Condition>
 </CompletionCondition>
 <Steps>
-<Step>Track</Step>
+<Step>${TRACK}</Step>
+<Step>${ALIGN}</Step>
+<Step>${GUIDE}</Step>
 ${FOCUS_OPT}
-<Step>Align</Step>
-<Step>Guide</Step>
 </Steps>
 </Job>
 _EOF
@@ -517,9 +517,9 @@ _EOF
 </CompletionCondition>
 <Steps>
 <Step>Track</Step>
-${FOCUS_OPT}
 <Step>Align</Step>
 <Step>Guide</Step>
+${FOCUS_OPT}
 </Steps>
 </Job>
 _EOF
@@ -679,7 +679,7 @@ done
 ## Shutdown Procedure
 ##  <ShutdownProcedure>
 ##  <Procedure>WarmCCD</Procedure>
-##  <Procedure value='/home/ekos/Kstars/Scripts/shutdown_obs.sh'>ShutdownScript</Procedure>
+##  <Procedure value='/home/ekos/kstars/Scripts/shutdown_obs.sh'>ShutdownScript</Procedure>
 ##  <Procedure>ParkMount</Procedure>
 ##  </ShutdownProcedure>
 
