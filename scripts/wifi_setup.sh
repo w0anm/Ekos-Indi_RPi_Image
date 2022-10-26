@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script will create the "50-cloud-init.yaml" file using the users wifi name
+# This script will create the "51-cloud-wifi.yaml" file using the users wifi name
 # and password.
 
 

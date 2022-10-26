@@ -64,7 +64,9 @@ make
 sudo make install
 
 # move file away so that it will not re-build
-mv ~/_phd2_install.sh ~/bin/.
+if [ -f ~/_phd2_install.sh ] ; then
+    mv ~/_phd2_install.sh ~/bin/.
+fi
 
 echo
 echo "Build and installation is completed..."

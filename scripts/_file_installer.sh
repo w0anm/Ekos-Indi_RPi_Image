@@ -26,7 +26,6 @@ install -o root -g root -m 755 vnc_greeter_control.sh /usr/local/bin/vnc_greeter
 install -o root -g root -m 644 x11vnc.service /lib/systemd/system/x11vnc.service
 install -o root -g root -m 644 indiwebmanager.service /etc/systemd/system/indiwebmanager.service
 install -o ekos -g ekos -m 755 -d /home/ekos/bin
-install -o ekos -g ekos -m 755 exposure_seq.sh /home/ekos/bin/exposure_seq.sh
 install -o ekos -g ekos -m 755 ekos_job_schedule.sh /home/ekos/bin/ekos_job_schedule.sh
 install -o root -g root -m 755 start_hotspot.sh /usr/local/bin/start_hotspot.sh
 install -o root -g root -m 755 stop_hotspot.sh /usr/local/bin/stop_hotspot.sh
@@ -57,4 +56,12 @@ install -o root -g root -m 640 bkup_local/image_backup.conf /usr/local/etc/image
 install -o root -g root -m 750 bkup_local/image_backup.sh /usr/local/sbin/image_backup.sh
 install -o root -g root -m 750 bkup_local/image_nfs_backup.sh /usr/local/sbin/image_nfs_backup.sh
 install -o root -g root -m 750 bkup_local/sys-imagebkup /usr/local/sbin/sys-imagebkup
+
+# Modify /boot/firmware/config.txt (append to file)
+if [ -f /boot/firmware/config.txt ] ; then
+   if (! grep usercfg.txt /boot/firmware/config.txt  &> /dev/null ) ; then
+	   echo "Adding 'include usercfg.txt' to /boot/firmware/config.txt..."
+           echo "include usercfg.txt" >> /boot/firmware/config.txt
+   fi
+fi
 

@@ -74,7 +74,7 @@ echo
 echo "Removing Snap from server, not needed..."
 snap list
 snap remove --purge lxd
-snap remove --purge core18
+# snap remove --purge core18
 snap remove --purge core20
 snap remove --purge snapd
 rm -rf /var/cache/snapd
