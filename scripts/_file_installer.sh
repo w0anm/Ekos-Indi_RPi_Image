@@ -40,6 +40,7 @@ install -o root -g root -m 755 rc.local /etc/rc.local
 #special scripts
 install -o root -g root -m 755 sd_to_ssd_conv.sh /root/sd_to_ssd_conv.sh
 install -o root -g root -m 755 BootFix.sh /root/BootFix.sh
+install -o root -g root -m 755 conv_static_addr.sh /root/conv_static_addr.sh
 
 # /boot/firmware files
 install -o root -g root -m 755 usercfg.txt /boot/firmware/usercfg.txt
