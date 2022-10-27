@@ -1,4 +1,4 @@
-I branched off for the Ubuntu 22.04.1 OS version.  This branch is like the prevous LTS branch.
+I branched off for the Ubuntu 22.04.1 OS version.  This branch is like the previous LTS branch.
 
 Installation
 
