@@ -83,6 +83,12 @@ apt autoremove -y --purge snapd gnome-software-plugin-snap
 apt autoremove -y --purge snapd gnome-software-plugin-snap
 apt-mark hold snapd
 
+# remove conflicting package for USB devices
+apt -y remove brltty 
+
+# remove tracking packages as they are not being used and can eat up process/cpu
+apt -y remove tracker tracker-extract tracker-miner-fs 
+
 # Auto remove any files not needed
 echo
 echo "Remove an files not needed..."
