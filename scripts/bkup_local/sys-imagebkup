@@ -304,6 +304,7 @@ EOF
 do_backup () {
 
   setup_lo
+  partprobe $DEVICE
   mount_image
 
   sync
