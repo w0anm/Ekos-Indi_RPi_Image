@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DIST=Ekos_Indi_Rpi4_v10_u22
+DIST=Ekos_Indi_Rpi4_v10.1_u22
 
 if [ ! -d ./dist/$DIST ] ; then
     mkdir -p ./dist/$DIST
