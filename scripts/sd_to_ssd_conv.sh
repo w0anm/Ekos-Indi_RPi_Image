@@ -232,8 +232,8 @@ umount $SSD
 # e2label /dev/sda2 ssd-writable # already done 
 
 # clean up mount directory
-if [ -d $SSD ] ; then
-   rm -rf "$SSD"
+if [ -d /$SSD ] ; then
+   rmdir "/$SSD"
 fi
 
 echo "========================================================================"
