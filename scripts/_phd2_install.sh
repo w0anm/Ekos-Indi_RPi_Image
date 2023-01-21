@@ -72,4 +72,11 @@ echo
 echo "Build and installation is completed..."
 echo
 
+# update /etc/motd with version information
+PHD_VERS=$(grep "#define PHDVERSION" /home/ekos/phd2/phd.h | awk 'BEGIN {FS = "\""} ; {print $2}')
+PHD_SUBVERS=$(grep "#define PHDSUBVER" /home/ekos/phd2/phd.h | awk 'BEGIN {FS = "\""} ; {print $2}')
+PHDVERSION={PHD_VER}${PHD_SUBVER}
+
+sudo sed -i "s/_PHDVERS_/phd2-version: $PHDVERSION/" /etc/motd
+
 exit

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DIST=Ekos_Indi_Rpi4_v10.1_u22
+DIST=Ekos_Indi_Rpi4_v10.2_u22
 
 if [ ! -d ./dist/$DIST ] ; then
     mkdir -p ./dist/$DIST
@@ -16,6 +16,11 @@ mv scripts.tar ./dist/$DIST/.
 cp scripts/run_first.sh ./dist/$DIST/.
 cp scripts.tar ./dist/$DIST/.
 cp Ekos_Indi_SD_Install_Ubuntu_22.04.pdf ./dist/$DIST/.
+
+# update /etc/motd with the latest distribution version number.
+# update /etc/motd with version information
+
+sudo sed -i "s/_DISTVERS_/Ekos\/Indi Image Version: $DIST by Christopher Kovacs/" /etc/motd
 
 echo
 echo "Creating Distribution zip file..."
