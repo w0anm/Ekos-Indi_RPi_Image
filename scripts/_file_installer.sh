@@ -58,6 +58,12 @@ install -o root -g root -m 750 bkup_local/image_backup.sh /usr/local/sbin/image_
 install -o root -g root -m 750 bkup_local/image_nfs_backup.sh /usr/local/sbin/image_nfs_backup.sh
 install -o root -g root -m 750 bkup_local/sys-imagebkup /usr/local/sbin/sys-imagebkup
 
+# misc scripts
+install -o ekos -g ekos -m 755 bin/check_status /home/ekos/bin/check_status
+install -o ekos -g ekos -m 755 bin/update_indi.sh /home/ekos/bin/update_indi.sh
+install -o root -g root -m 755 special/cleanup_hotspot_list /usr/local/bin/cleanup_hotspot_list
+
+
 # Modify /boot/firmware/config.txt (append to file)
 if [ -f /boot/firmware/config.txt ] ; then
    if (! grep usercfg.txt /boot/firmware/config.txt  &> /dev/null ) ; then
