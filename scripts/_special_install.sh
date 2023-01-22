@@ -65,4 +65,8 @@ if [ "$ANS" = "y" ] ; then
     bash special/gps_module_support.sh
 fi
 
+# misc other files
+install -o ekos -g ekos -m 755 -d /home/ekos/bin
+install -o ekos -g ekos -m 755 ekos_job_schedule.sh /home/ekos/bin/ekos_job_schedule.sh
+
 exit 
