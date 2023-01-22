@@ -1,9 +1,10 @@
 #!/bin/bash
 
 DIST=Ekos_Indi_Rpi4_v10.2_u22
+DATE=$(date +%Y.%m.%d)
 
 # update /etc/motd with the latest distribution version number.
-sed -i "s/_DISTVERS_/Ekos\/Indi Image Version: $DIST by Christopher Kovacs/" scripts/motd
+sed "s/_DISTVERS_/Ekos\/Indi Image Version: $DIST by Christopher Kovacs ($DATE)/" scripts/motd_git > scripts/motd
 
 # clean up
 if [ -d ./dist/$DIST ] ; then
