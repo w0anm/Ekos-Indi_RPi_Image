@@ -13,11 +13,21 @@ sudo apt -y install skychart
 #install ccdciel
 sudo apt -y install ccdciel
 
-
-##wget https://sourceforge.net/projects/astap-program/files/linux_installer/astap_armhf.deb
+# Check to see if old package is still around, if so remove it
+if [ -f astap_arm*.deb ]; then
+    rm -f astap_arm*.deb
+fi
+# remove and get the latest package
+# get and install astap_arm64 package
+wget https://sourceforge.net/projects/astap-program/files/linux_installer/astap_arm64.deb
 sudo dpkg -i astap_arm64.deb
 
-##wget https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.deb
+# Check to see if old package is still around, if so remove it
+if [ -f h17_star_database_mag17_astap.deb ] ; then
+    rm -f h17_star_database_mag17_astap.deb 
+fi
+# get and install h17_star_database_mag17_astap.dep package
+wget https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.deb
 sudo dpkg -i h17_star_database_mag17_astap.deb
 
 # libraries needed
@@ -54,10 +64,8 @@ echo "export LD_LIBRARY_PATH=~/source/LibRaw/lib/.libs" > ~/bin/ccdciel_start
 echo "ccdciel" >> ~/bin/ccdciel_start
 chmod 755 ~/bin/ccdciel_start
 
-sudo /bin/ccdciel /bin/ccdciel
-cp /home/ekos/bin/ccdciel_start /usr/bin/ccdciel
-
-
+# copy over start script
+sudo cp /home/ekos/bin/ccdciel_start /usr/bin/ccdciel_start
 
 echo "Installation Completed..."
 

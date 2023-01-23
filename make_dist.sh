@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DIST=Ekos_Indi_Rpi4_v10.2_u22
+DIST=Ekos_Indi_Rpi4_v10.3_u22
 DATE=$(date +%Y.%m.%d)
 
 # update /etc/motd with the latest distribution version number.
